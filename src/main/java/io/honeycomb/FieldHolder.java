@@ -147,14 +147,26 @@ public final class FieldHolder {
         return this.dataSet;
     }
 
+    /**
+     * Returns dynamic fields for this FieldHolder.
+     * @return dynamic fields for this FieldHolder
+     */
     public Map<String, Callable> getDynFields() {
         return this.dynFields;
     }
 
+    /**
+     * Returns fields for this FieldHolder.
+     * @return fields for this FieldHolder
+     */
     public Map<String, Object> getFields() {
         return this.fields;
     }
 
+    /**
+     * Returns a reference to LibHoney.
+     * @return a reference to LibHoney.
+     */
     public LibHoney getLibHoney() {
         return this.libhoney;
     }
@@ -192,6 +204,10 @@ public final class FieldHolder {
         return this.fields.isEmpty();
     }
 
+    /**
+     * Stores a reference to LibHoney and applies LibHoney's metadata to this FieldHolder.
+     * @param libhoney reference to LibHoney
+     */
     protected void linkLibHoney(LibHoney libhoney) {
         this.libhoney = libhoney;
         this.fields = new HashMap(libhoney.getDefaultFields());
@@ -201,22 +217,26 @@ public final class FieldHolder {
         this.sampleRate = libhoney.getSampleRate();
     }
 
+    /**
+     * Sets the data set
+     * @param dataSet data set
+     */
     public void setDataSet(String dataSet) {
         this.dataSet = dataSet;
     }
 
-    public void setDynFields(HashMap<String, Callable> dynFields) {
-        this.dynFields = dynFields;
-    }
-
-    public void setFields(HashMap<String, Object> fields) {
-        this.fields = fields;
-    }
-
+    /**
+     * Sets the sample rate
+     * @param sampleRate sample rate
+     */
     public void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
     }
 
+    /**
+     * Sets the write key
+     * @param writeKey write key
+     */
     public void setWriteKey(String writeKey) {
         this.writeKey = writeKey;
     }

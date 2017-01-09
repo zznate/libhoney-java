@@ -262,10 +262,21 @@ public final class LibHoney {
         return this.writeKey;
     }
 
+    /**
+     * Sends an event with the given key and value, creating an ephemeral FieldHolder and HoneyEvent
+     *
+     * @param key field key
+     * @param value field value
+     * @throws HoneyException if there is something wrong with the request
+     */
     public void sendNow(String key, String value) throws HoneyException {
         this.createFieldHolder().createEvent().send();
     }
 
+    /**
+     * Sets the reference to transmission
+     * @param transmission reference to transmission
+     */
     public void setTransmission(Transmission transmission) {
         this.transmission = transmission;
     }

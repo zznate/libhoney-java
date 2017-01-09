@@ -5,7 +5,7 @@ import java.util.UUID;
 public class Example {
 
     public static final String DATA_SET = "example";
-    public static final String WRITE_KEY = "499e56a6f613dc79e68afd742153750e";
+    public static final String WRITE_KEY = "499e56a6f613dc79e68afd742153750e"; // TODO delete
 
     public static void main(String[] args) throws InterruptedException {
 
