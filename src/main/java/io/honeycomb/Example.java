@@ -1,9 +1,5 @@
 package io.honeycomb;
 
-;
-
-import java.util.HashMap;
-import java.util.concurrent.Callable;
 import java.util.UUID;
 
 public class Example {
