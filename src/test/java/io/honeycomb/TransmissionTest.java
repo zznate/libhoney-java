@@ -55,7 +55,7 @@ public class TransmissionTest {
         ArrayBlockingQueue requestQueue = spy((ArrayBlockingQueue) libhoney.getTransmission().getRequestQueue());
         libhoney.getTransmission().setRequestQueue(requestQueue);
 
-        HoneyEvent honeyEvent = libhoney.createFieldBuilder().build().createEvent();
+        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
         libhoney.getTransmission().enqueueRequest(honeyEvent);
         verify(requestQueue, never()).add(anyObject());
         verify(requestQueue, times(1)).put(anyObject());
@@ -64,40 +64,37 @@ public class TransmissionTest {
 
     @Test
     public void testQueueOverflow() throws Exception {
-        FieldHolder fieldHolder = new FieldHolder();
-        fieldHolder.addField("foo", 4);
         LibHoney libhoney = new LibHoney.Builder()
                 .writeKey("wk")
                 .dataSet("ds")
                 .maxConcurrentBranches(1)
-                .fieldHolder(fieldHolder)
                 .build();
+        libhoney.addDefaultField("foo", 4);
         Transmission transmission = spy(libhoney.getTransmission());
         transmission.setRequestQueue(new ArrayBlockingQueue<>(1));
         libhoney.setTransmission(transmission);
-        libhoney.createFieldBuilder().build().createEvent().send();
-        libhoney.createFieldBuilder().build().createEvent().send();
+        libhoney.createFieldHolder().createEvent().send();
+        libhoney.createFieldHolder().createEvent().send();
         verify(transmission, times(1)).createJsonError(eq("event dropped; queue overflow"), anyString());
         libhoney.close();
     }
 
     @Test
     public void testSend() throws Exception {
-        FieldHolder fieldHolder = new FieldHolder();
-        fieldHolder.addField("foo", "bar");
         LibHoney libhoney = new LibHoney.Builder()
                 .writeKey("writeme")
                 .dataSet("datame")
                 .apiHost("http://urlme")
                 .metadata("metame")
                 .sampleRate(1)
-                .fieldHolder(fieldHolder)
                 .build();
+        FieldHolder fieldHolder = new FieldHolder(libhoney);
+        libhoney.addDefaultField("foo", "bar");
 
         Transmission transmission = spy(libhoney.getTransmission());
         libhoney.setTransmission(transmission);
 
-        HoneyEvent honeyEvent = libhoney.createFieldBuilder().build().createEvent();
+        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
         honeyEvent.send();
 
         verify(transmission, times(1)).enqueueRequest(honeyEvent);

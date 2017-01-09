@@ -5,8 +5,11 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 /**
- * Stores default values for FieldBuilders and Transmission.
+ * Stores default values for FieldHolders and Transmission.
  */
 public final class LibHoney {
     /**
@@ -14,7 +17,7 @@ public final class LibHoney {
      * Transmission contains the global instance of Transmission.
      * All other metadata is used as default values for HoneyEvents and Transmission.
      */
-    private final FieldHolder fieldHolder;
+    private FieldHolder fieldHolder;
     private Transmission transmission;
 
     // Metadata
@@ -38,7 +41,6 @@ public final class LibHoney {
      * @param builder the builder to build this LibHoney
      */
     private LibHoney(Builder builder) {
-        this.fieldHolder = builder.fieldHolder;
         this.writeKey = builder.writeKey;
         this.dataSet = builder.dataSet;
         this.sampleRate = builder.sampleRate;
@@ -51,6 +53,8 @@ public final class LibHoney {
         this.responseQueueLength = builder.responseQueueLength;
         this.metadata = builder.metadata;
 
+        this.fieldHolder = new FieldHolder();
+        fieldHolder.linkLibHoney(this);
         this.transmission = new Transmission.Builder(this).build();
     }
 
@@ -69,7 +73,6 @@ public final class LibHoney {
         private int requestQueueLength = Constants.DEFAULT_REQUEST_QUEUE_LENGTH;
         private int responseQueueLength = Constants.DEFAULT_RESPONSE_QUEUE_LENGTH;
         private String metadata = Constants.DEFAULT_METADATA;
-        private FieldHolder fieldHolder = new FieldHolder();
 
         public Builder writeKey(String writeKey) {
             this.writeKey = writeKey;
@@ -126,23 +129,26 @@ public final class LibHoney {
             return this;
         }
 
-        public Builder fieldHolder(FieldHolder fieldHolder) {
-            this.fieldHolder = fieldHolder;
-            return this;
-        }
-
         public LibHoney build() {
             return new LibHoney(this);
         }
     }
 
+    public void addDefaultDynField(String key, Callable function) {
+        this.fieldHolder.addDynField(key, function);
+    }
+
+    public void addDefaultField(String key, Object value) {
+        this.fieldHolder.addField(key, value);
+    }
+
     /**
-     * Creates a FieldBuilder from this LibHoney's fields and metadata.
+     * Creates a FieldHolder from this LibHoney's fields and metadata.
      *
-     * @return a FieldBuilder from this LibHoney's fields and metaata
+     * @return a FieldHolder from this LibHoney's fields and metaata
      */
-    public FieldBuilder.Builder createFieldBuilder() {
-        return new FieldBuilder.Builder(this);
+    public FieldHolder createFieldHolder() {
+        return new FieldHolder(this);
     }
 
     /**
@@ -192,12 +198,12 @@ public final class LibHoney {
         return this.dataSet;
     }
 
-    /**
-     * Returns the FieldHolder for this LibHoney.
-     * @return the FieldHolder for this LibHoney
-     */
-    public FieldHolder getFieldHolder() {
-        return this.fieldHolder;
+    public Map <String, Callable> getDefaultDynFields() {
+        return this.fieldHolder.getDynFields();
+    }
+
+    public Map<String, Object> getDefaultFields() {
+        return this.fieldHolder.getFields();
     }
 
     /**
@@ -254,6 +260,10 @@ public final class LibHoney {
      */
     public String getWriteKey() {
         return this.writeKey;
+    }
+
+    public void sendNow(String key, String value) throws HoneyException {
+        this.createFieldHolder().createEvent().send();
     }
 
     public void setTransmission(Transmission transmission) {

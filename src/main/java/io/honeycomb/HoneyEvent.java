@@ -19,7 +19,7 @@ public class HoneyEvent {
     /**
      * FieldHolder contains all the fields and dynamic fields.
      * Created at, write key, data set, and sample rate are all necessary to create a HoneyEvent.
-     * Values are typically passed in by FieldBuilder.
+     * Values are typically passed in by FieldHolder.
      */
     private final FieldHolder fieldHolder;
     private final Random random;
@@ -39,26 +39,26 @@ public class HoneyEvent {
      * Constructs a new HoneyEvent with a default metadata string inherited from LibHoney.
      *
      * @param libhoney LibHoney
-     * @param fieldBuilder fieldBuilder from which this HoneyEvent is built
+     * @param fieldHolder fieldHolder from which this HoneyEvent is built
      */
-    public HoneyEvent(LibHoney libhoney, FieldBuilder fieldBuilder) {
-        this(libhoney, fieldBuilder, libhoney.getMetadata());
+    public HoneyEvent(LibHoney libhoney, FieldHolder fieldHolder) {
+        this(libhoney, fieldHolder, libhoney.getMetadata());
     }
 
     /**
-     * Constructs a new HoneyEvent from a FieldBuilder, executing all dynamic fields and storing them as fields.
+     * Constructs a new HoneyEvent from a FieldHolder, executing all dynamic fields and storing them as fields.
      *
      * @param libhoney LibHoney
-     * @param fieldBuilder fieldBuilder from which this HoneyEvent is built
+     * @param fieldHolder fieldHolder from which this HoneyEvent is built
      * @param metadata metadata for debugging purposes
      */
-    public HoneyEvent(LibHoney libhoney, FieldBuilder fieldBuilder, String metadata) {
-        this.fieldHolder = new FieldHolder(fieldBuilder.getFieldHolder());
+    public HoneyEvent(LibHoney libhoney, FieldHolder fieldHolder, String metadata) {
+        this.fieldHolder = new FieldHolder(fieldHolder);
 
         this.createdAt = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        this.writeKey = fieldBuilder.getWriteKey();
-        this.dataSet = fieldBuilder.getDataSet();
-        this.sampleRate = fieldBuilder.getSampleRate();
+        this.writeKey = fieldHolder.getWriteKey();
+        this.dataSet = fieldHolder.getDataSet();
+        this.sampleRate = fieldHolder.getSampleRate();
         this.metadata = metadata;
         this.random = new Random();
         this.transmission = libhoney.getTransmission();

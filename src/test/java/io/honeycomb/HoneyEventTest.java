@@ -19,7 +19,7 @@ public final class HoneyEventTest {
                 .closeTimeout(21)
                 .writeKey("wk")
                 .build();
-        HoneyEvent honeyEvent = libhoney.createFieldBuilder().build().createEvent();
+        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
 
         assertEquals("dz", honeyEvent.getDataSet());
         assertEquals("", honeyEvent.getMetadata());
@@ -42,8 +42,8 @@ public final class HoneyEventTest {
                 .build();
         Transmission transmission = mock(Transmission.class);
         libhoney.setTransmission(transmission);
-        FieldBuilder fieldBuilder = new FieldBuilder.Builder(libhoney).build();
-        HoneyEvent event = spy(new HoneyEvent(libhoney, fieldBuilder));
+        FieldHolder fieldHolder = libhoney.createFieldHolder();
+        HoneyEvent event = spy(new HoneyEvent(libhoney, fieldHolder));
 
         when(event.shouldSendEvent()).thenReturn(false);
         event.send();

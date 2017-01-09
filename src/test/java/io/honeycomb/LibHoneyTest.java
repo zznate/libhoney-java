@@ -45,14 +45,13 @@ public class LibHoneyTest {
         dynFields.put("exampleDynField", randomUUID);
 
         // Create a FieldBuilder
-        FieldBuilder fieldBuilder = libhoney.createFieldBuilder()
-                .fields(fields)
-                .dynFields(dynFields)
-                .sampleRate(1)
-                .build();
+        FieldHolder fieldHolder = libhoney.createFieldHolder();
+        fieldHolder.addFields(fields);
+        fieldHolder.addDynFields(dynFields);
+        fieldHolder.setSampleRate(1);
 
         // Send an event, verify running
-        fieldBuilder.createEvent().send();
+        fieldHolder.createEvent().send();
         assertEquals(false, libhoney.getTransmission().isShutdown());
 
         // Close, verify not running
