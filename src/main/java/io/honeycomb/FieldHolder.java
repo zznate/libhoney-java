@@ -210,8 +210,8 @@ public final class FieldHolder {
      */
     protected void linkLibHoney(LibHoney libhoney) {
         this.libhoney = libhoney;
-        this.fields = new HashMap(libhoney.getDefaultFields());
-        this.dynFields = new HashMap(libhoney.getDefaultDynFields());
+        this.fields.putAll(libhoney.getDefaultFields());
+        this.dynFields.putAll(libhoney.getDefaultDynFields());
         this.writeKey = libhoney.getWriteKey();
         this.dataSet = libhoney.getDataSet();
         this.sampleRate = libhoney.getSampleRate();
