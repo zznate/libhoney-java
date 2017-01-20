@@ -7,7 +7,6 @@ target/*
 
 # Eclipse Specific
 *target*
-*.jar
 *.war
 *.ear
 *.class
