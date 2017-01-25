@@ -7,7 +7,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public final class HoneyEventTest {
+public final class EventTest {
     @Test
     public void testConstructor() throws Exception {
         LibHoney libhoney = new LibHoney.Builder()
@@ -19,11 +19,11 @@ public final class HoneyEventTest {
                 .closeTimeout(21)
                 .writeKey("wk")
                 .build();
-        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
+        Event event = libhoney.createBuilder().createEvent();
 
-        assertEquals("dz", honeyEvent.getDataSet());
-        assertEquals("", honeyEvent.getMetadata());
-        assertEquals("wk", honeyEvent.getWriteKey());
+        assertEquals("dz", event.getDataSet());
+        assertEquals("", event.getMetadata());
+        assertEquals("wk", event.getWriteKey());
     }
 
     @Rule
@@ -42,8 +42,8 @@ public final class HoneyEventTest {
                 .build();
         Transmission transmission = mock(Transmission.class);
         libhoney.setTransmission(transmission);
-        FieldHolder fieldHolder = libhoney.createFieldHolder();
-        HoneyEvent event = spy(new HoneyEvent(libhoney, fieldHolder));
+        Builder builder = libhoney.createBuilder();
+        Event event = spy(new Event(libhoney, builder));
 
         when(event.shouldSendEvent()).thenReturn(false);
         event.send();

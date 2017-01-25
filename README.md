@@ -16,8 +16,8 @@ For specifics on the python libhoney, check out the
 
 * Initialize LibHoney with your Honeycomb writekey and dataset
   name
-* Create a FieldBuilder from LibHoney, then a HoneyEvent from that FieldBuilder
-* Send that HoneyEvent
+* Create a FieldBuilder from LibHoney, then a Event from that FieldBuilder
+* Send that Event
 * Close LibHoney when you are finished
 
 ## Example

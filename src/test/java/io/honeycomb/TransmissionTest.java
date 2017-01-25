@@ -2,7 +2,6 @@ package io.honeycomb;
 
 import org.json.JSONObject;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -55,8 +54,8 @@ public class TransmissionTest {
         ArrayBlockingQueue requestQueue = spy((ArrayBlockingQueue) libhoney.getTransmission().getRequestQueue());
         libhoney.getTransmission().setRequestQueue(requestQueue);
 
-        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
-        libhoney.getTransmission().enqueueRequest(honeyEvent);
+        Event event = libhoney.createBuilder().createEvent();
+        libhoney.getTransmission().enqueueRequest(event);
         verify(requestQueue, never()).add(anyObject());
         verify(requestQueue, times(1)).put(anyObject());
         libhoney.close();
@@ -69,12 +68,12 @@ public class TransmissionTest {
                 .dataSet("ds")
                 .maxConcurrentBranches(1)
                 .build();
-        libhoney.addDefaultField("foo", 4);
+        libhoney.addField("foo", 4);
         Transmission transmission = spy(libhoney.getTransmission());
         transmission.setRequestQueue(new ArrayBlockingQueue<>(1));
         libhoney.setTransmission(transmission);
-        libhoney.createFieldHolder().createEvent().send();
-        libhoney.createFieldHolder().createEvent().send();
+        libhoney.createBuilder().createEvent().send();
+        libhoney.createBuilder().createEvent().send();
         verify(transmission, times(1)).createJsonError(eq("event dropped; queue overflow"), anyString());
         libhoney.close();
     }
@@ -85,18 +84,17 @@ public class TransmissionTest {
                 .writeKey("writeme")
                 .dataSet("datame")
                 .apiHost("http://urlme")
-                .metadata("metame")
                 .sampleRate(1)
                 .build();
-        FieldHolder fieldHolder = new FieldHolder(libhoney);
-        libhoney.addDefaultField("foo", "bar");
+        Builder builder = new Builder(libhoney);
+        libhoney.addField("foo", "bar");
 
         Transmission transmission = spy(libhoney.getTransmission());
         libhoney.setTransmission(transmission);
 
-        HoneyEvent honeyEvent = libhoney.createFieldHolder().createEvent();
-        honeyEvent.send();
+        Event event = libhoney.createBuilder().createEvent();
+        event.send();
 
-        verify(transmission, times(1)).enqueueRequest(honeyEvent);
+        verify(transmission, times(1)).enqueueRequest(event);
     }
 }

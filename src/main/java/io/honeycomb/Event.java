@@ -12,17 +12,16 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 /**
- * Stores a FieldHolder and some metadata, executes all dynamic fields upon instantiation,
+ * Stores a Builder and some metadata, executes all dynamic fields upon instantiation,
  * and can enqueue HTTP requests to Transmission.
  */
-public class HoneyEvent {
+public class Event {
     /**
-     * FieldHolder contains all the fields and dynamic fields.
-     * Created at, write key, data set, and sample rate are all necessary to create a HoneyEvent.
-     * Values are typically passed in by FieldHolder.
+     * Builder contains all the fields and dynamic fields.
+     * Created at, write key, data set, and sample rate are all necessary to create a Event.
+     * Values are typically passed in by Builder.
      */
-    private final FieldHolder fieldHolder;
-    private final Random random;
+    private final Builder builder;
     private final Transmission transmission;
 
     // Metadata
@@ -33,41 +32,40 @@ public class HoneyEvent {
     private final String metadata;
 
     // Logging
-    private final Log log = LogFactory.getLog(HoneyEvent.class);
+    private final Log log = LogFactory.getLog(Event.class);
 
     /**
-     * Constructs a new HoneyEvent with a default metadata string inherited from LibHoney.
+     * Constructs a new Event with a default metadata string inherited from LibHoney.
      *
      * @param libhoney LibHoney
-     * @param fieldHolder fieldHolder from which this HoneyEvent is built
+     * @param builder builder from which this Event is built
      */
-    public HoneyEvent(LibHoney libhoney, FieldHolder fieldHolder) {
-        this(libhoney, fieldHolder, libhoney.getMetadata());
+    public Event(LibHoney libhoney, Builder builder) {
+        this(libhoney, builder, "");
     }
 
     /**
-     * Constructs a new HoneyEvent from a FieldHolder, executing all dynamic fields and storing them as fields.
+     * Constructs a new Event from a Builder, executing all dynamic fields and storing them as fields.
      *
      * @param libhoney LibHoney
-     * @param fieldHolder fieldHolder from which this HoneyEvent is built
+     * @param builder builder from which this Event is built
      * @param metadata metadata for debugging purposes
      */
-    public HoneyEvent(LibHoney libhoney, FieldHolder fieldHolder, String metadata) {
-        this.fieldHolder = new FieldHolder(fieldHolder);
+    public Event(LibHoney libhoney, Builder builder, String metadata) {
+        this.builder = new Builder(builder);
 
         this.createdAt = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        this.writeKey = fieldHolder.getWriteKey();
-        this.dataSet = fieldHolder.getDataSet();
-        this.sampleRate = fieldHolder.getSampleRate();
+        this.writeKey = builder.getWriteKey();
+        this.dataSet = builder.getDataSet();
+        this.sampleRate = builder.getSampleRate();
         this.metadata = metadata;
-        this.random = new Random();
         this.transmission = libhoney.getTransmission();
 
         // Execute all dynamic field functions
-        for (Object o : this.fieldHolder.getDynFields().entrySet()) {
+        for (Object o : this.builder.getDynFields().entrySet()) {
             HashMap.Entry entry = (HashMap.Entry) o;
             try {
-                this.fieldHolder.addField((String) entry.getKey(), ((Callable) entry.getValue()).call());
+                this.builder.addField((String) entry.getKey(), ((Callable) entry.getValue()).call());
             } catch (Exception e) {
                 log.error(e);
             }
@@ -75,61 +73,61 @@ public class HoneyEvent {
     }
 
     /**
-     * Returns the time when this HoneyEvent was created.
-     * @return the time when this HoneyEvent was created
+     * Returns the time when this Event was created.
+     * @return the time when this Event was created
      */
     public String getCreatedAt() {
         return this.createdAt;
     }
 
     /**
-     * Returns the data set identifier for this HoneyEvent.
-     * @return the data set identifier for this HoneyEvent
+     * Returns the data set identifier for this Event.
+     * @return the data set identifier for this Event
      */
     public String getDataSet() {
         return this.dataSet;
     }
 
     /**
-     * Returns the FieldHolder for this HoneyEvent.
-     * @return the FieldHolder for this HoneyEvent
+     * Returns the Builder for this Event.
+     * @return the Builder for this Event
      */
-    public FieldHolder getFieldHolder() {
-        return this.fieldHolder;
+    public Builder getBuilder() {
+        return this.builder;
     }
 
     /**
-     * Returns the metadata string for this HoneyEvent.
-     * @return the metadata string for this HoneyEvent
+     * Returns the metadata string for this Event.
+     * @return the metadata string for this Event
      */
     public String getMetadata() {
         return this.metadata;
     }
 
     /**
-     * Returns the sample rate for this HoneyEvent.
-     * @return the sample rate for this HoneyEvent
+     * Returns the sample rate for this Event.
+     * @return the sample rate for this Event
      */
     public int getSampleRate() {
         return this.sampleRate;
     }
 
     /**
-     * Returns the write key for this HoneyEvent.
-     * @return the write key for this HoneyEvent.
+     * Returns the write key for this Event.
+     * @return the write key for this Event.
      */
     public String getWriteKey() {
         return this.writeKey;
     }
 
     /**
-     * Enqueues this HoneyEvent with Transmission as a request, or as a dropped response if it should be dropped.
+     * Enqueues this Event with Transmission as a request, or as a dropped response if it should be dropped.
      *
      * @throws HoneyException if there is something wrong with the request
      */
     public void send() throws HoneyException {
         if (this.shouldSendEvent()) {
-            if (this.fieldHolder.isEmpty()) {
+            if (this.builder.isEmpty()) {
                 throw new HoneyException("No metrics added to event. Won't send empty event.");
             } else if (this.transmission.getApiHost().equals("")) {
                 throw new HoneyException("No APIHost for Honeycomb. Can't send to the Great Unknown.");
@@ -147,21 +145,21 @@ public class HoneyEvent {
     }
 
     /**
-     * Returns true if this HoneyEvent should be dropped (due to the sample rate).
-     * @return true if this HoneyEvent should be dropped
+     * Returns true if this Event should be dropped (due to the sample rate).
+     * @return true if this Event should be dropped
      */
     public boolean shouldSendEvent() {
-        return this.sampleRate == 1 || (this.random.nextInt(this.sampleRate) == 0);
+        return this.sampleRate == 1 || ((new Random()).nextInt(this.sampleRate) == 0);
     }
 
     /**
-     * Returns a JSON representation of this HoneyEvent.
-     * @return a JSON representation of this HoneyEvent
+     * Returns a JSON representation of this Event.
+     * @return a JSON representation of this Event
      */
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
-            json.put("fieldHolder", this.fieldHolder);
+            json.put("builder", this.builder);
             json.put("createdAt", this.createdAt);
             json.put("writeKey", this.writeKey);
             json.put("dataSet", this.dataSet);
@@ -174,8 +172,8 @@ public class HoneyEvent {
     }
 
     /**
-     * Returns a string representation of this HoneyEvent.
-     * @return a string representation of this HoneyEvent
+     * Returns a string representation of this Event.
+     * @return a string representation of this Event
      */
     @Override
     public String toString() {

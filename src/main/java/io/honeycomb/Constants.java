@@ -10,10 +10,10 @@ abstract class Constants {
     public static final int DEFAULT_CLOSE_TIMEOUT = 10; // seconds
     public static final String DEFAULT_DATA_SET = "";
     public static final int DEFAULT_MAX_CONCURRENT_BRANCHES = 10;
-    public static final String DEFAULT_METADATA = "";
     public static final int DEFAULT_REQUEST_QUEUE_LENGTH = 1000;
     public static final int DEFAULT_RESPONSE_QUEUE_LENGTH = 1000;
     public static final int DEFAULT_SAMPLE_RATE = 1;
+    public static final String DEFAULT_USER_AGENT = "libhoney-java/" + Constants.LIBHONEY_VERSION;
     public static final String DEFAULT_WRITE_KEY = "";
 
     private Constants() {

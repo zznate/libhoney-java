@@ -35,23 +35,23 @@ public class LibHoneyTest {
 
     @Test
     public void testClose() throws Exception {
-        // Fields for FieldBuilder
+        // Fields for Builder
         HashMap<String, Object> fields = new HashMap<>();
         fields.put("foo", "bar");
 
-        // Dynamic fields for FieldBuilder
+        // Dynamic fields for Builder
         HashMap<String, Callable> dynFields = new HashMap<>();
         Callable randomUUID = () -> UUID.randomUUID().toString();
         dynFields.put("exampleDynField", randomUUID);
 
-        // Create a FieldBuilder
-        FieldHolder fieldHolder = libhoney.createFieldHolder();
-        fieldHolder.addFields(fields);
-        fieldHolder.addDynFields(dynFields);
-        fieldHolder.setSampleRate(1);
+        // Create a Builder
+        Builder builder = libhoney.createBuilder();
+        builder.addFields(fields);
+        builder.addDynFields(dynFields);
+        builder.setSampleRate(1);
 
         // Send an event, verify running
-        fieldHolder.createEvent().send();
+        builder.createEvent().send();
         assertEquals(false, libhoney.getTransmission().isShutdown());
 
         // Close, verify not running

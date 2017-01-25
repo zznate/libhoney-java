@@ -7,12 +7,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Queue;
 import java.util.concurrent.*;
 
@@ -21,7 +20,7 @@ import java.util.concurrent.*;
  */
 public class Transmission {
     /**
-     * Request queue contains HoneyEvents that will soon be sent as HTTP requests.
+     * Request queue contains Events that will soon be sent as HTTP requests.
      * Response queue contains JSONObjects that were recently received as HTTP responses.
      */
     private ArrayBlockingQueue<Object> requestQueue;
@@ -34,6 +33,7 @@ public class Transmission {
     private final boolean blockOnSend;
     private final boolean blockOnResponse;
     private final int closeTimeout;
+    private final String userAgent;
 
     // Logging
     private final Log log = LogFactory.getLog(Transmission.class);
@@ -55,6 +55,7 @@ public class Transmission {
         this.closeTimeout = builder.closeTimeout;
         this.requestQueue = new ArrayBlockingQueue<>(builder.requestQueueLength);
         this.responseQueue = new ArrayBlockingQueue<>(builder.responseQueueLength);
+        this.userAgent = builder.userAgent;
 
         /**
          * Blocks on requestQueue.take(), handling and usually sending a request when it is taken
@@ -70,7 +71,7 @@ public class Transmission {
                             this.enqueueRequest(POISON_PILL);
                             return;
                         }
-                        this.send((HoneyEvent) request);
+                        this.send((Event) request);
                     }
                 } catch (Exception e) {
                     log.error(e);
@@ -90,6 +91,7 @@ public class Transmission {
         private int closeTimeout;
         private int requestQueueLength;
         private int responseQueueLength;
+        private String userAgent;
 
         // Passed in global state
         public Builder(LibHoney libhoney) {
@@ -100,6 +102,7 @@ public class Transmission {
             this.closeTimeout = libhoney.getCloseTimeout();
             this.requestQueueLength = libhoney.getRequestQueueLength();
             this.responseQueueLength = libhoney.getResponseQueueLength();
+            this.userAgent = libhoney.getUserAgent();
         }
 
         public Builder apiHost(String apiHost) {
@@ -132,8 +135,13 @@ public class Transmission {
             return this;
         }
 
-        public Builder getResponseQueueLength(int getResponseQueueLength) {
-            this.responseQueueLength = getResponseQueueLength;
+        public Builder responseQueueLength(int responseQueueLength) {
+            this.responseQueueLength = responseQueueLength;
+            return this;
+        }
+
+        public Builder userAgent(String agent) {
+            this.userAgent = agent;
             return this;
         }
 
@@ -147,35 +155,31 @@ public class Transmission {
      * then shuts down the executor and awaits this.closeTimeout seconds before timing out.
      */
     public void close() {
-        this.enqueueRequest(POISON_PILL);
         this.executor.shutdown();
         try {
+            this.requestQueue.offer(POISON_PILL); // Does not acknowledge blockOnSend
             this.executor.awaitTermination(this.closeTimeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             log.error(e);
+        } finally {
+            this.executor.shutdownNow();
         }
     }
 
     /**
-     * Returns an HTTP POST request built from the specified HoneyEvent.
+     * Returns an HTTP POST request built from the specified Event.
      *
-     * @param honeyEvent the data to be sent in an HTTP POST request
+     * @param event the data to be sent in an HTTP POST request
      * @return an HTTP POST request
      */
-    private HttpPost createHttpRequest(HoneyEvent honeyEvent) {
-        HttpPost post = new HttpPost(this.apiHost + "/1/events/" + honeyEvent.getDataSet());
+    private HttpPost createHttpRequest(Event event) {
+        HttpPost post = new HttpPost(this.apiHost + "/1/events/" + event.getDataSet());
 
-        post.setHeader("User-Agent", "libhoney-java/" + Constants.LIBHONEY_VERSION);
-        post.setHeader("X-Honeycomb-Team", honeyEvent.getWriteKey());
-        post.setHeader("X-Honeycomb-SampleRate", Integer.toString(honeyEvent.getSampleRate()));
-        post.setHeader("X-Honeycomb-Event-Time", honeyEvent.getCreatedAt());
-        post.setHeader("X-Honeycomb-Samplerate", Integer.toString(honeyEvent.getSampleRate()));
-        try {
-            post.setEntity( new StringEntity(honeyEvent.getFieldHolder().toJson().getString("fields"),
-                    ContentType.APPLICATION_JSON));
-        } catch (JSONException e) {
-            log.error(e);
-        }
+        post.setHeader("User-Agent", this.userAgent);
+        post.setHeader("X-Honeycomb-Team", event.getWriteKey());
+        post.setHeader("X-Honeycomb-SampleRate", Integer.toString(event.getSampleRate()));
+        post.setHeader("X-Honeycomb-Event-Time", event.getCreatedAt());
+        post.setEntity(new StringEntity(new JSONObject(event.getBuilder().getFields()).toString(), ContentType.APPLICATION_JSON));
 
         return post;
     }
@@ -210,60 +214,43 @@ public class Transmission {
      */
     private JSONObject createJsonResponse(HttpResponse httpResponse, String metadata, long start)  {
         long end = System.currentTimeMillis();
-        BufferedReader rd;
-        StringBuilder result = new StringBuilder();
-        String line;
-        try {
-            rd = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-        } catch (IOException e) {
-            log.error(e);
-        }
-
-        if (httpResponse.getStatusLine().getStatusCode() == 200) {
-            log.debug("messages sent");
-        } else {
-            log.debug("send_errors");
-        }
 
         JSONObject json = new JSONObject();
         try {
             json.put("status_code", httpResponse.getStatusLine().getStatusCode());
             json.put("duration", end - start);
             json.put("metadata", metadata);
-            json.put("body", result.toString());
+            json.put("body", EntityUtils.toString(httpResponse.getEntity()));
             json.put("error", "");
-        } catch (JSONException e) {
+        } catch (Exception e) {
             log.error(e);
         }
+
         return json;
     }
 
     /**
-     * Adds a HoneyEvent to this Transmission's request queue.
+     * Adds a Event to this Transmission's request queue.
      *
-     * @param honeyEvent HoneyEvent to be enqueued
+     * @param event Event to be enqueued
      */
-    public void enqueueRequest(Object honeyEvent) {
+    public void enqueueRequest(Object event) {
         if (this.blockOnSend) {
             try {
-                this.requestQueue.put(honeyEvent);
+                this.requestQueue.put(event);
             } catch (InterruptedException e) {
                 log.error(e);
             }
         } else {
             try {
-                this.requestQueue.add(honeyEvent);
+                this.requestQueue.add(event);
             } catch (IllegalStateException e) {
                 log.debug("queue_overflow");
-                if (honeyEvent.getClass() == HoneyEvent.class) {
+                if (event.getClass() == Event.class) {
                     this.enqueueResponse(this.createJsonError("event dropped; queue overflow",
-                            ((HoneyEvent) honeyEvent).getMetadata()));
+                            ((Event) event).getMetadata()));
                 } else {
-                    this.enqueueResponse(this.createJsonError("event dropped; queue overflow",
-                            ""));
+                    this.enqueueResponse(this.createJsonError("event dropped; queue overflow", ""));
                 }
             }
         }
@@ -363,15 +350,15 @@ public class Transmission {
     }
 
     /**
-     * Send an HTTP request based on a HoneyEvent, wait for a response, then enqueue the response.
+     * Send an HTTP request based on a Event, wait for a response, then enqueue the response.
      *
-     * @param honeyEvent HonyEvent from which the HTTP request is built
+     * @param event HonyEvent from which the HTTP request is built
      */
-    protected void send(HoneyEvent honeyEvent) {
+    protected void send(Event event) {
         long start = System.currentTimeMillis();
 
         // Configure request
-        HttpPost post = this.createHttpRequest(honeyEvent);
+        HttpPost post = this.createHttpRequest(event);
 
         // Execute request
         HttpResponse response = null;
@@ -382,7 +369,7 @@ public class Transmission {
         }
 
         // Interpret response
-        JSONObject json = this.createJsonResponse(response, honeyEvent.getMetadata(), start);
+        JSONObject json = this.createJsonResponse(response, event.getMetadata(), start);
 
         // Enqueue response
         this.enqueueResponse(json);
@@ -405,12 +392,16 @@ public class Transmission {
     }
 
     /**
-     * Enqueue a response indicating that a HoneyEvent was dropped due to sample rate, including its metadata string.
+     * Enqueue a response indicating that a Event was dropped due to sample rate, including its metadata string.
      * @param metadata metadata string used for debugging
      */
     public void sendDroppedResponse(String metadata) {
         JSONObject json = this.createJsonError("event dropped due to sampling", metadata);
         this.enqueueResponse(json);
+    }
+
+    public void setUserAgent(String agent) {
+
     }
 
     /**

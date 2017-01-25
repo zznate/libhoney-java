@@ -11,12 +11,12 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 /**
- * Stores a FieldHolder and some metadata, and can create a HoneyEvent.
+ * Stores a Builder and some metadata, and can create a Event.
  */
-public final class FieldHolder {
+public final class Builder {
     /**
-     * FieldHolder contains all the fields and dynamic fields.
-     * Write key, data set, and sample rate are necessary to create a HoneyEvent.
+     * Builder contains all the fields and dynamic fields.
+     * Write key, data set, and sample rate are necessary to create a Event.
      * Default values are inherited from LibHoney.
      */
     private HashMap<String, Object> fields;
@@ -28,27 +28,27 @@ public final class FieldHolder {
     private int sampleRate;
 
     // Logging
-    private final Log log = LogFactory.getLog(FieldHolder.class);
+    private final Log log = LogFactory.getLog(Builder.class);
 
     // Reference to LibHoney
     private LibHoney libhoney;
 
-    protected FieldHolder() {
+    protected Builder() {
         this.fields = new HashMap();
         this.dynFields = new HashMap();
     }
 
-    public FieldHolder(LibHoney libhoney) {
+    public Builder(LibHoney libhoney) {
         this();
         this.linkLibHoney(libhoney);
     }
 
     /**
-     * Constructs a new FieldHolder with the same mappings and metadata as the specified FieldHolder.
+     * Constructs a new Builder with the same mappings and metadata as the specified Builder.
      *
-     * @param other the FieldHolder whose mappings are to be stored in this map
+     * @param other the Builder whose mappings are to be stored in this map
      */
-    public FieldHolder(FieldHolder other) {
+    public Builder(Builder other) {
         this.fields = new HashMap(other.getFields());
         this.dynFields = new HashMap(other.getDynFields());
         this.writeKey = other.getWriteKey();
@@ -58,14 +58,14 @@ public final class FieldHolder {
     }
 
     /**
-     * Copies all of the field and dynamic field mappings from the specified FieldHolder to this FieldHolder.
+     * Calls addFields
      *
-     * @param other the FieldHolder whose mappings are to be added to this map
+     * @param fields fields to add
      */
-    public void add(FieldHolder other) {
-        this.fields.putAll(other.fields);
-        this.dynFields.putAll(other.dynFields);
+    public void add(Map<String, Object> fields) {
+        addFields(fields);
     }
+
     /**
      *
      * Associates the specified function with the specified key in the dynamic fields map.
@@ -78,8 +78,8 @@ public final class FieldHolder {
     }
 
     /**
-     * Copies all of the dynamic field mappings from the specified map to this FieldHolder.
-     * @param dynFields dynamic field mappings to be added this FieldHolder
+     * Copies all of the dynamic field mappings from the specified map to this Builder.
+     * @param dynFields dynamic field mappings to be added this Builder
      */
     public void addDynFields(Map<String, Callable> dynFields) {
         this.dynFields.putAll(dynFields);
@@ -96,29 +96,38 @@ public final class FieldHolder {
     }
 
     /**
-     * Copies all of the field mappings from the specified map to this FieldHolder.
-     * @param fields field mappings to be added to this FieldHolder
+     * Copies all of the field mappings from the specified map to this Builder.
+     * @param fields field mappings to be added to this Builder
      */
     public void addFields(Map<String, Object> fields) {
         this.fields.putAll(fields);
     }
 
-
     /**
-     * Creates a HoneyEvent from this FieldHolder's fields.
+     * Copies all of the field and dynamic field mappings from the specified Builder to this Builder.
      *
-     * @return a HoneyEvent from this FieldHolder's fields
+     * @param other the Builder whose mappings are to be added to this map
      */
-    public HoneyEvent createEvent() {
-        return new HoneyEvent(this.libhoney, this);
+    public void addFromBuilder(Builder other) {
+        this.fields.putAll(other.fields);
+        this.dynFields.putAll(other.dynFields);
     }
 
     /**
-     * Compares the specified object with this FieldHolder for equality.  Returns true if the given object is also a
-     * FieldHolder and the two FieldHolders contain equal FieldHolders and metadata.
+     * Creates a Event from this Builder's fields.
      *
-     * @param obj Object to be compared for equality with this FieldHolder
-     * @return true if the specified object is equal to this FieldHolder
+     * @return a Event from this Builder's fields
+     */
+    protected Event createEvent() {
+        return new Event(this.libhoney, this);
+    }
+
+    /**
+     * Compares the specified object with this Builder for equality.  Returns true if the given object is also a
+     * Builder and the two Builders contain equal fields and metadata.
+     *
+     * @param obj Object to be compared for equality with this Builder
+     * @return true if the specified object is equal to this Builder
      */
     @Override
     public boolean equals(Object obj) {
@@ -130,7 +139,7 @@ public final class FieldHolder {
             return false;
         }
 
-        FieldHolder other = (FieldHolder) obj;
+        Builder other = (Builder) obj;
 
         return this.fields.equals(other.getFields())
                 && this.dynFields.equals(other.getDynFields())
@@ -140,24 +149,24 @@ public final class FieldHolder {
     }
 
     /**
-     * Returns the data set identifier for this FieldHolder.
-     * @return the data set identifier for this FieldHolder
+     * Returns the data set identifier for this Builder.
+     * @return the data set identifier for this Builder
      */
     public String getDataSet() {
         return this.dataSet;
     }
 
     /**
-     * Returns dynamic fields for this FieldHolder.
-     * @return dynamic fields for this FieldHolder
+     * Returns dynamic fields for this Builder.
+     * @return dynamic fields for this Builder
      */
     public Map<String, Callable> getDynFields() {
         return this.dynFields;
     }
 
     /**
-     * Returns fields for this FieldHolder.
-     * @return fields for this FieldHolder
+     * Returns fields for this Builder.
+     * @return fields for this Builder
      */
     public Map<String, Object> getFields() {
         return this.fields;
@@ -172,24 +181,24 @@ public final class FieldHolder {
     }
 
     /**
-     * Returns the sample rate for this FieldHolder.
-     * @return the sample rate for this FieldHolder
+     * Returns the sample rate for this Builder.
+     * @return the sample rate for this Builder
      */
     public int getSampleRate() {
         return this.sampleRate;
     }
 
     /**
-     * Returns the write key for this FieldHolder.
-     * @return the write key for this FieldHolder
+     * Returns the write key for this Builder.
+     * @return the write key for this Builder
      */
     public String getWriteKey() {
         return this.writeKey;
     }
 
     /**
-     * Returns the hash code value for this FieldHolder.
-     * @return the hash code value for this FieldHolder
+     * Returns the hash code value for this Builder.
+     * @return the hash code value for this Builder
      */
     @Override
     public int hashCode() {
@@ -197,15 +206,15 @@ public final class FieldHolder {
     }
 
     /**
-     * Returns true if this FieldHolder contains no fields.  Does not check dynamic fields.
-     * @return true if this FieldHolder contains no fields
+     * Returns true if this Builder contains no fields.  Does not check dynamic fields.
+     * @return true if this Builder contains no fields
      */
     public boolean isEmpty() {
         return this.fields.isEmpty();
     }
 
     /**
-     * Stores a reference to LibHoney and applies LibHoney's metadata to this FieldHolder.
+     * Stores a reference to LibHoney and applies LibHoney's metadata to this Builder.
      * @param libhoney reference to LibHoney
      */
     protected void linkLibHoney(LibHoney libhoney) {
@@ -215,6 +224,10 @@ public final class FieldHolder {
         this.writeKey = libhoney.getWriteKey();
         this.dataSet = libhoney.getDataSet();
         this.sampleRate = libhoney.getSampleRate();
+    }
+
+    public void send() throws HoneyException {
+        this.createEvent().send();
     }
 
     /**
@@ -242,8 +255,8 @@ public final class FieldHolder {
     }
 
     /**
-     * Returns a JSON representation of this FieldHolder.
-     * @return a JSON representation of this FieldHolder
+     * Returns a JSON representation of this Builder.
+     * @return a JSON representation of this Builder
      */
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
@@ -260,8 +273,8 @@ public final class FieldHolder {
     }
 
     /**
-     * Returns a string representation of this FieldHolder.
-     * @return a string representation of this FieldHolder
+     * Returns a string representation of this Builder.
+     * @return a string representation of this Builder
      */
     @Override
     public String toString() {
