@@ -84,9 +84,4 @@ public class LibHoneyTest {
         libhoney.add(ed);
         assertEquals(ed, libhoney.getFields());
     }
-
-    @Test
-    public void testExample() {
-
-    }
 }

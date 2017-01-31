@@ -27,10 +27,10 @@ public class Event {
 
     // Metadata
     private final String createdAt;
-    private final String dataSet;
-    private final String metadata;
-    private final int sampleRate;
-    private final String writeKey;
+    private String dataSet;
+    private String metadata;
+    private int sampleRate;
+    private String writeKey;
 
     // Logging
     private final Log log = LogFactory.getLog(Event.class);
@@ -160,6 +160,38 @@ public class Event {
             log.debug("sampled");
             transmission.sendDroppedResponse(this.metadata);
         }
+    }
+
+    /**
+     * Sets the data set
+     * @param dataSet data set
+     */
+    public void setDataSet(String dataSet) {
+        this.dataSet = dataSet;
+    }
+
+    /**
+     * Sets the metadata string
+     * @param metadata metadata string
+     */
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    /**
+     * Sets the sample rate
+     * @param sampleRate sample rate
+     */
+    public void setSampleRate(int sampleRate) {
+        this.sampleRate = sampleRate;
+    }
+
+    /**
+     * Sets the write key
+     * @param writeKey write key
+     */
+    public void setWriteKey(String writeKey) {
+        this.writeKey = writeKey;
     }
 
     /**
