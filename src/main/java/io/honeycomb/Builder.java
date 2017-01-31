@@ -19,19 +19,17 @@ public final class Builder {
      * Write key, data set, and sample rate are necessary to create a Event.
      * Default values are inherited from LibHoney.
      */
+    private LibHoney libhoney;
     private HashMap<String, Object> fields;
     private HashMap<String, Callable> dynFields;
 
     // Metadata
-    private String writeKey;
     private String dataSet;
     private int sampleRate;
+    private String writeKey;
 
     // Logging
     private final Log log = LogFactory.getLog(Builder.class);
-
-    // Reference to LibHoney
-    private LibHoney libhoney;
 
     protected Builder() {
         this.fields = new HashMap();
@@ -102,15 +100,6 @@ public final class Builder {
     public void addFromBuilder(Builder other) {
         this.fields.putAll(other.fields);
         this.dynFields.putAll(other.dynFields);
-    }
-
-    /**
-     * Creates a Event from this Builder's fields.
-     *
-     * @return a Event from this Builder's fields
-     */
-    protected Event newEvent() {
-        return new Event(this.libhoney, this);
     }
 
     /**
@@ -217,6 +206,20 @@ public final class Builder {
         this.sampleRate = libhoney.getSampleRate();
     }
 
+    /**
+     * Creates a Event from this Builder's fields.
+     *
+     * @return a Event from this Builder's fields
+     */
+    public Event newEvent() {
+        return new Event(this.libhoney, this);
+    }
+
+    /**
+     * Creates an Event, then sends with Transmission as a request, or as a dropped response if it should be dropped.
+     *
+     * @throws HoneyException if there is something wrong with the request
+     */
     public void send() throws HoneyException {
         this.newEvent().send();
     }

@@ -135,18 +135,39 @@ public final class LibHoney {
         }
     }
 
+    /**
+     * Copies all of the field mappings from the specified map to this Builder.
+     * @param fields field mappings to be added to this Builder
+     */
     public void add(Map<String, Object> fields) {
         this.builder.add(fields);
     }
 
+    /**
+     *
+     * Associates the specified function with the specified key in the dynamic fields map.
+     *
+     * @param key key with which the specified function is to be associated
+     * @param function function to be associated with the specified key
+     */
     public void addDynField(String key, Callable function) {
         this.builder.addDynField(key, function);
     }
 
+    /**
+     * Copies all of the dynamic field mappings from the specified map to this Builder.
+     * @param dynFields dynamic field mappings to be added this Builder
+     */
     public void addDynFields(Map<String, Callable> dynFields) {
         this.builder.addDynFields(dynFields);
     }
 
+    /**
+     * Associates the specified value with the specified key in the fields map.
+     *
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     */
     public void addField(String key, Object value) {
         this.builder.addField(key, value);
     }
@@ -198,10 +219,18 @@ public final class LibHoney {
         return this.dataSet;
     }
 
+    /**
+     * Returns dynamic fields for this LibHoney.
+     * @return dynamic fields for this LibHoney
+     */
     public Map <String, Callable> getDynFields() {
         return this.builder.getDynFields();
     }
 
+    /**
+     * Returns fields for this LibHoney.
+     * @return fields for this LibHoney
+     */
     public Map<String, Object> getFields() {
         return this.builder.getFields();
     }
@@ -214,6 +243,10 @@ public final class LibHoney {
         return this.maxConcurrentBranches;
     }
 
+    /**
+     * Returns the request queue for this LibHoney.
+     * @return the request queue for this LibHoney
+     */
     public Queue getRequestQueue() {
         return this.transmission.getRequestQueue();
     }
@@ -226,6 +259,10 @@ public final class LibHoney {
         return this.requestQueueLength;
     }
 
+    /**
+     * Returns the response queue for this LibHoney
+     * @return the response queue for this LibHoney
+     */
     public Queue getResponseQueue() {
         return this.transmission.getResponseQueue();
     }
@@ -275,10 +312,20 @@ public final class LibHoney {
         return new io.honeycomb.Builder(this);
     }
 
+    /**
+     * Creates a Event from this LibHoney's Builder.
+     *
+     * @return a Event from this LibHoney's Builder
+     */
     public Event newEvent() {
         return newBuilder().newEvent();
     }
 
+    /**
+     * Creates an Event, then sends with Transmission as a request, or as a dropped response if it should be dropped.
+     *
+     * @throws HoneyException if there is something wrong with the request
+     */
     public void send() throws HoneyException {
         this.newBuilder().send();
     }

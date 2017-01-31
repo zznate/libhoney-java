@@ -26,21 +26,18 @@ public class Transmission {
     private ArrayBlockingQueue<Object> requestQueue;
     private ArrayBlockingQueue<JSONObject> responseQueue;
     private final ExecutorService executor;
+    private final Object POISON_PILL = new Object();
 
     // Metadata
-    private final String apiHost;
+    private String apiHost;
+    private boolean blockOnSend;
+    private boolean blockOnResponse;
+    private int closeTimeout;
     private final int maxConcurrentBranches;
-    private final boolean blockOnSend;
-    private final boolean blockOnResponse;
-    private final int closeTimeout;
-    private final String userAgent;
+    private String userAgent;
 
     // Logging
     private final Log log = LogFactory.getLog(Transmission.class);
-
-
-    // For closing all threads
-    private final Object POISON_PILL = new Object();
 
     /**
      * Constructs a Transmission from a Transmission.Builder.
@@ -376,6 +373,23 @@ public class Transmission {
     }
 
     /**
+     * Enqueue a response indicating that a Event was dropped due to sample rate, including its metadata string.
+     * @param metadata metadata string used for debugging
+     */
+    public void sendDroppedResponse(String metadata) {
+        JSONObject json = this.createJsonError("event dropped due to sampling", metadata);
+        this.enqueueResponse(json);
+    }
+
+    /**
+     * Sets the api host
+     * @param apiHost api host
+     */
+    public void setApiHost(String apiHost) {
+        this.apiHost = apiHost;
+    }
+
+    /**
      * Sets the request queue (for debugging purposes)
      * @param requestQueue request queue
      */
@@ -392,16 +406,35 @@ public class Transmission {
     }
 
     /**
-     * Enqueue a response indicating that a Event was dropped due to sample rate, including its metadata string.
-     * @param metadata metadata string used for debugging
+     * Sets if threads should block on response
+     * @param blockOnResponse block on response
      */
-    public void sendDroppedResponse(String metadata) {
-        JSONObject json = this.createJsonError("event dropped due to sampling", metadata);
-        this.enqueueResponse(json);
+    public void setBlockOnResponse(boolean blockOnResponse) {
+        this.blockOnResponse = blockOnResponse;
     }
 
-    public void setUserAgent(String agent) {
+    /**
+     * Sets if threads should block on send
+     * @param blockOnSend block on send
+     */
+    public void setBlockOnSend(boolean blockOnSend) {
+        this.blockOnSend = blockOnSend;
+    }
 
+    /**
+     * Sets the thread .close timeout
+     * @param closeTimeout .close timeout
+     */
+    public void setCloseTimeout(int closeTimeout) {
+        this.closeTimeout = closeTimeout;
+    }
+
+    /**
+     * Sets the user agent
+     * @param userAgent userAgent
+     */
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
     }
 
     /**

@@ -23,15 +23,14 @@ public class Event {
      * Values are typically passed in by Builder.
      */
     private HashMap<String, Object> fields;
-    private HashMap<String, Callable> dynFields;
     private final Transmission transmission;
 
     // Metadata
     private final String createdAt;
-    private final String writeKey;
     private final String dataSet;
-    private final int sampleRate;
     private final String metadata;
+    private final int sampleRate;
+    private final String writeKey;
 
     // Logging
     private final Log log = LogFactory.getLog(Event.class);
@@ -82,14 +81,6 @@ public class Event {
     }
 
     /**
-     * Copies all of the dynamic field mappings from the specified map to this Builder.
-     * @param dynFields dynamic field mappings to be added this Builder
-     */
-    public void addDynFields(Map<String, Callable> dynFields) {
-        this.dynFields.putAll(dynFields);
-    }
-
-    /**
      * Associates the specified value with the specified key in the fields map.
      *
      * @param key key with which the specified value is to be associated
@@ -115,6 +106,10 @@ public class Event {
         return this.dataSet;
     }
 
+    /**
+     * Returns fields for this Event.
+     * @return fields for this Event
+     */
     public Map<String, Object> getFields() {
         return this.fields;
     }
