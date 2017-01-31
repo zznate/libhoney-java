@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
@@ -18,7 +19,8 @@ public final class LibHoney {
      * Transmission contains the global instance of Transmission.
      * All other metadata is used as default values for Events and Transmission.
      */
-    private io.honeycomb.Builder builder;
+    private HashMap<String, Object> fields;
+    private HashMap<String, Callable> dynFields;
     private Transmission transmission;
 
     // Metadata
@@ -54,8 +56,8 @@ public final class LibHoney {
         this.responseQueueLength = builder.responseQueueLength;
         this.userAgent = builder.userAgent;
 
-        this.builder = new io.honeycomb.Builder();
-        this.builder.linkLibHoney(this);
+        this.fields = new HashMap<>();
+        this.dynFields = new HashMap<>();
         this.transmission = new Transmission.Builder(this).build();
     }
 
@@ -136,11 +138,11 @@ public final class LibHoney {
     }
 
     /**
-     * Copies all of the field mappings from the specified map to this Builder.
-     * @param fields field mappings to be added to this Builder
+     * Copies all of the field mappings from the specified map to this LibHoney.
+     * @param fields field mappings to be added to this LibHoney
      */
     public void add(Map<String, Object> fields) {
-        this.builder.add(fields);
+        this.fields.putAll(fields);
     }
 
     /**
@@ -151,15 +153,15 @@ public final class LibHoney {
      * @param function function to be associated with the specified key
      */
     public void addDynField(String key, Callable function) {
-        this.builder.addDynField(key, function);
+        this.dynFields.put(key, function);
     }
 
     /**
-     * Copies all of the dynamic field mappings from the specified map to this Builder.
-     * @param dynFields dynamic field mappings to be added this Builder
+     * Copies all of the dynamic field mappings from the specified map to this LibHoney.
+     * @param dynFields dynamic field mappings to be added this LibHoney
      */
     public void addDynFields(Map<String, Callable> dynFields) {
-        this.builder.addDynFields(dynFields);
+        this.dynFields.putAll(dynFields);
     }
 
     /**
@@ -169,7 +171,7 @@ public final class LibHoney {
      * @param value value to be associated with the specified key
      */
     public void addField(String key, Object value) {
-        this.builder.addField(key, value);
+        this.fields.put(key, value);
     }
 
     /**
@@ -224,7 +226,7 @@ public final class LibHoney {
      * @return dynamic fields for this LibHoney
      */
     public Map <String, Callable> getDynFields() {
-        return this.builder.getDynFields();
+        return this.dynFields;
     }
 
     /**
@@ -232,7 +234,7 @@ public final class LibHoney {
      * @return fields for this LibHoney
      */
     public Map<String, Object> getFields() {
-        return this.builder.getFields();
+        return this.fields;
     }
 
     /**
@@ -357,6 +359,8 @@ public final class LibHoney {
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
+            json.put("fields", this.fields);
+            json.put("dynFields", this.fields);
             json.put("writeKey", this.writeKey);
             json.put("dataSet", this.dataSet);
             json.put("sampleRate", this.sampleRate);
@@ -365,7 +369,6 @@ public final class LibHoney {
             json.put("blockOnSend", this.blockOnSend);
             json.put("blockOnResponse", this.blockOnResponse);
             json.put("closeTimeout", this.closeTimeout);
-            json.put("builder", this.builder);
         } catch (JSONException e) {
             log.error(e);
         }
