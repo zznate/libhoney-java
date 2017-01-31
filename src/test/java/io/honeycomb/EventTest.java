@@ -19,7 +19,7 @@ public final class EventTest {
                 .closeTimeout(21)
                 .writeKey("wk")
                 .build();
-        Event event = libhoney.createBuilder().createEvent();
+        Event event = libhoney.newBuilder().newEvent();
 
         assertEquals("dz", event.getDataSet());
         assertEquals("", event.getMetadata());
@@ -42,7 +42,7 @@ public final class EventTest {
                 .build();
         Transmission transmission = mock(Transmission.class);
         libhoney.setTransmission(transmission);
-        Builder builder = libhoney.createBuilder();
+        Builder builder = libhoney.newBuilder();
         Event event = spy(new Event(libhoney, builder));
 
         when(event.shouldSendEvent()).thenReturn(false);

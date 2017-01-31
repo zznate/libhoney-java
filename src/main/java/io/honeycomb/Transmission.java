@@ -179,7 +179,7 @@ public class Transmission {
         post.setHeader("X-Honeycomb-Team", event.getWriteKey());
         post.setHeader("X-Honeycomb-SampleRate", Integer.toString(event.getSampleRate()));
         post.setHeader("X-Honeycomb-Event-Time", event.getCreatedAt());
-        post.setEntity(new StringEntity(new JSONObject(event.getBuilder().getFields()).toString(), ContentType.APPLICATION_JSON));
+        post.setEntity(new StringEntity(new JSONObject(event.getFields()).toString(), ContentType.APPLICATION_JSON));
 
         return post;
     }

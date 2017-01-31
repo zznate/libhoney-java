@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
@@ -21,7 +22,8 @@ public class Event {
      * Created at, write key, data set, and sample rate are all necessary to create a Event.
      * Values are typically passed in by Builder.
      */
-    private final Builder builder;
+    private HashMap<String, Object> fields;
+    private HashMap<String, Callable> dynFields;
     private final Transmission transmission;
 
     // Metadata
@@ -52,8 +54,7 @@ public class Event {
      * @param metadata metadata for debugging purposes
      */
     public Event(LibHoney libhoney, Builder builder, String metadata) {
-        this.builder = new Builder(builder);
-
+        this.fields = new HashMap(builder.getFields());
         this.createdAt = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
         this.writeKey = builder.getWriteKey();
         this.dataSet = builder.getDataSet();
@@ -62,14 +63,40 @@ public class Event {
         this.transmission = libhoney.getTransmission();
 
         // Execute all dynamic field functions
-        for (Object o : this.builder.getDynFields().entrySet()) {
+        for (Object o : builder.getDynFields().entrySet()) {
             HashMap.Entry entry = (HashMap.Entry) o;
             try {
-                this.builder.addField((String) entry.getKey(), ((Callable) entry.getValue()).call());
+                this.fields.put((String) entry.getKey(), ((Callable) entry.getValue()).call());
             } catch (Exception e) {
                 log.error(e);
             }
         }
+    }
+
+    /**
+     * Copies all of the field mappings from the specified map to this Builder.
+     * @param fields field mappings to be added to this Builder
+     */
+    public void add(Map<String, Object> fields) {
+        this.fields.putAll(fields);
+    }
+
+    /**
+     * Copies all of the dynamic field mappings from the specified map to this Builder.
+     * @param dynFields dynamic field mappings to be added this Builder
+     */
+    public void addDynFields(Map<String, Callable> dynFields) {
+        this.dynFields.putAll(dynFields);
+    }
+
+    /**
+     * Associates the specified value with the specified key in the fields map.
+     *
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     */
+    public void addField(String key, Object value) {
+        this.fields.put(key, value);
     }
 
     /**
@@ -88,12 +115,8 @@ public class Event {
         return this.dataSet;
     }
 
-    /**
-     * Returns the Builder for this Event.
-     * @return the Builder for this Event
-     */
-    public Builder getBuilder() {
-        return this.builder;
+    public Map<String, Object> getFields() {
+        return this.fields;
     }
 
     /**
@@ -127,7 +150,7 @@ public class Event {
      */
     public void send() throws HoneyException {
         if (this.shouldSendEvent()) {
-            if (this.builder.isEmpty()) {
+            if (this.fields.isEmpty()) {
                 throw new HoneyException("No metrics added to event. Won't send empty event.");
             } else if (this.transmission.getApiHost().equals("")) {
                 throw new HoneyException("No APIHost for Honeycomb. Can't send to the Great Unknown.");
@@ -159,7 +182,7 @@ public class Event {
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
-            json.put("builder", this.builder);
+            json.put("fields", this.fields);
             json.put("createdAt", this.createdAt);
             json.put("writeKey", this.writeKey);
             json.put("dataSet", this.dataSet);

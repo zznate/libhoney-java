@@ -54,7 +54,7 @@ public class TransmissionTest {
         ArrayBlockingQueue requestQueue = spy((ArrayBlockingQueue) libhoney.getTransmission().getRequestQueue());
         libhoney.getTransmission().setRequestQueue(requestQueue);
 
-        Event event = libhoney.createBuilder().createEvent();
+        Event event = libhoney.newBuilder().newEvent();
         libhoney.getTransmission().enqueueRequest(event);
         verify(requestQueue, never()).add(anyObject());
         verify(requestQueue, times(1)).put(anyObject());
@@ -72,8 +72,8 @@ public class TransmissionTest {
         Transmission transmission = spy(libhoney.getTransmission());
         transmission.setRequestQueue(new ArrayBlockingQueue<>(1));
         libhoney.setTransmission(transmission);
-        libhoney.createBuilder().createEvent().send();
-        libhoney.createBuilder().createEvent().send();
+        libhoney.newBuilder().newEvent().send();
+        libhoney.newBuilder().newEvent().send();
         verify(transmission, times(1)).createJsonError(eq("event dropped; queue overflow"), anyString());
         libhoney.close();
     }
@@ -92,7 +92,7 @@ public class TransmissionTest {
         Transmission transmission = spy(libhoney.getTransmission());
         libhoney.setTransmission(transmission);
 
-        Event event = libhoney.createBuilder().createEvent();
+        Event event = libhoney.newBuilder().newEvent();
         event.send();
 
         verify(transmission, times(1)).enqueueRequest(event);

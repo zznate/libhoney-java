@@ -136,7 +136,7 @@ public final class LibHoney {
     }
 
     public void add(Map<String, Object> fields) {
-        this.addFields(fields);
+        this.builder.add(fields);
     }
 
     public void addDynField(String key, Callable function) {
@@ -149,19 +149,6 @@ public final class LibHoney {
 
     public void addField(String key, Object value) {
         this.builder.addField(key, value);
-    }
-
-    public void addFields(Map<String, Object> fields) {
-        this.builder.addFields(fields);
-    }
-
-    /**
-     * Creates a Builder from this LibHoney's fields.
-     *
-     * @return a Builder from this LibHoney's fields
-     */
-    public io.honeycomb.Builder createBuilder() {
-        return new io.honeycomb.Builder(this);
     }
 
     /**
@@ -211,11 +198,11 @@ public final class LibHoney {
         return this.dataSet;
     }
 
-    public Map <String, Callable> getDefaultDynFields() {
+    public Map <String, Callable> getDynFields() {
         return this.builder.getDynFields();
     }
 
-    public Map<String, Object> getDefaultFields() {
+    public Map<String, Object> getFields() {
         return this.builder.getFields();
     }
 
@@ -279,8 +266,21 @@ public final class LibHoney {
         return this.writeKey;
     }
 
+    /**
+     * Creates a Builder from this LibHoney's fields.
+     *
+     * @return a Builder from this LibHoney's fields
+     */
+    public io.honeycomb.Builder newBuilder() {
+        return new io.honeycomb.Builder(this);
+    }
+
+    public Event newEvent() {
+        return newBuilder().newEvent();
+    }
+
     public void send() throws HoneyException {
-        this.createBuilder().send();
+        this.newBuilder().send();
     }
 
     /**
@@ -290,8 +290,8 @@ public final class LibHoney {
      * @throws HoneyException if there is something wrong with the request
      */
     public void sendNow(Map<String, Object> fields) throws HoneyException {
-        io.honeycomb.Builder builder = this.createBuilder();
-        builder.addFields(fields);
+        io.honeycomb.Builder builder = this.newBuilder();
+        builder.add(fields);
         builder.send();
     }
 

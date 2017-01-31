@@ -10,6 +10,8 @@ import java.util.concurrent.Callable;
 import static org.junit.Assert.*;
 
 public class LibHoneyTest {
+    private final Callable sampleDynField = () -> "foobar";
+
     LibHoney libhoney;
 
     @Before
@@ -45,17 +47,46 @@ public class LibHoneyTest {
         dynFields.put("exampleDynField", randomUUID);
 
         // Create a Builder
-        Builder builder = libhoney.createBuilder();
-        builder.addFields(fields);
+        Builder builder = libhoney.newBuilder();
+        builder.add(fields);
         builder.addDynFields(dynFields);
         builder.setSampleRate(1);
 
         // Send an event, verify running
-        builder.createEvent().send();
+        builder.newEvent().send();
         assertEquals(false, libhoney.getTransmission().isShutdown());
 
         // Close, verify not running
         libhoney.close();
         assertEquals(true, libhoney.getTransmission().isShutdown());
+    }
+
+    @Test
+    public void testAddField() {
+        HashMap<String, Object> ed = new HashMap<>();
+        ed.put("whomp", true);
+        libhoney.addField("whomp", true);
+        assertEquals(ed, libhoney.getFields());
+    }
+
+    @Test
+    public void testAddDynField() {
+        HashMap<String, Callable> ed = new HashMap<>();
+        ed.put("baz", sampleDynField);
+        libhoney.addDynField("baz", sampleDynField);
+        assertEquals(ed, libhoney.getDynFields());
+    }
+
+    @Test
+    public void testAdd() {
+        HashMap<String, Object> ed = new HashMap<>();
+        ed.put("whomp", true);
+        libhoney.add(ed);
+        assertEquals(ed, libhoney.getFields());
+    }
+
+    @Test
+    public void testExample() {
+
     }
 }

@@ -58,12 +58,11 @@ public final class Builder {
     }
 
     /**
-     * Calls addFields
-     *
-     * @param fields fields to add
+     * Copies all of the field mappings from the specified map to this Builder.
+     * @param fields field mappings to be added to this Builder
      */
     public void add(Map<String, Object> fields) {
-        addFields(fields);
+        this.fields.putAll(fields);
     }
 
     /**
@@ -96,14 +95,6 @@ public final class Builder {
     }
 
     /**
-     * Copies all of the field mappings from the specified map to this Builder.
-     * @param fields field mappings to be added to this Builder
-     */
-    public void addFields(Map<String, Object> fields) {
-        this.fields.putAll(fields);
-    }
-
-    /**
      * Copies all of the field and dynamic field mappings from the specified Builder to this Builder.
      *
      * @param other the Builder whose mappings are to be added to this map
@@ -118,7 +109,7 @@ public final class Builder {
      *
      * @return a Event from this Builder's fields
      */
-    protected Event createEvent() {
+    protected Event newEvent() {
         return new Event(this.libhoney, this);
     }
 
@@ -219,15 +210,26 @@ public final class Builder {
      */
     protected void linkLibHoney(LibHoney libhoney) {
         this.libhoney = libhoney;
-        this.fields.putAll(libhoney.getDefaultFields());
-        this.dynFields.putAll(libhoney.getDefaultDynFields());
+        this.fields.putAll(libhoney.getFields());
+        this.dynFields.putAll(libhoney.getDynFields());
         this.writeKey = libhoney.getWriteKey();
         this.dataSet = libhoney.getDataSet();
         this.sampleRate = libhoney.getSampleRate();
     }
 
     public void send() throws HoneyException {
-        this.createEvent().send();
+        this.newEvent().send();
+    }
+
+    /**
+     * Immediately send a map of keys and values as a Event
+     *
+     * @param fields field key
+     * @throws HoneyException if there is something wrong with the request
+     */
+    public void sendNow(Map<String, Object> fields) throws HoneyException {
+        this.fields.putAll(fields);
+        this.send();
     }
 
     /**
