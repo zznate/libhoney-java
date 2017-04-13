@@ -31,6 +31,7 @@ public class TransmissionTest {
     @Test
     public void testBlockOnResponse() throws Exception {
         LibHoney libhoney = new LibHoney.Builder()
+                .apiHost("uuu")
                 .writeKey("wk")
                 .dataSet("ds")
                 .blockOnResponse(true)
@@ -47,8 +48,10 @@ public class TransmissionTest {
     @Test
     public void testBlockOnSend() throws Exception {
         LibHoney libhoney = new LibHoney.Builder()
+                .apiHost("uuu")
                 .writeKey("wk")
                 .dataSet("ds")
+                .closeTimeout(1) // seconds
                 .blockOnSend(true)
                 .build();
         ArrayBlockingQueue requestQueue = spy((ArrayBlockingQueue) libhoney.getTransmission().getRequestQueue());
@@ -64,8 +67,10 @@ public class TransmissionTest {
     @Test
     public void testQueueOverflow() throws Exception {
         LibHoney libhoney = new LibHoney.Builder()
+                .apiHost("uuu")
                 .writeKey("wk")
                 .dataSet("ds")
+                .closeTimeout(1) // seconds
                 .maxConcurrentBranches(1)
                 .build();
         libhoney.addField("foo", 4);
