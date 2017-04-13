@@ -1,28 +1,37 @@
-A Java library for sending data to Honeycomb (http://honeycomb.io)
-========================================================
+# libhoney [![Build Status](https://travis-ci.org/honeycombio/libhoney-java.svg?branch=master)](https://travis-ci.org/honeycombio/libhoney-java)
 
-## Summary
+Java library for sending events to [Honeycomb](https://honeycomb.io). (For more information, see the [documentation](https://honeycomb.io/docs).)
 
-libhoney is written to ease the process of sending data to Honeycomb from within
-your Java code.
 
-For an overview of how to use a honeycomb library, see our documentation at
-https://honeycomb.io/docs/send-data/sdks/
+## Documentation
 
-For specifics on the python libhoney, check out the
-[javadoc](https://honeycomb.io/docs/send-data/sdks/java/)
+An API reference is available at https://honeycombio.github.io/libhoney-java
 
-## Basic usage:
+Docs are generated via `javadoc -d javadoc -sourcepath src/main/java/ io.honeycomb` and hosted on the `gh-pages` branch of this repo.
 
-* Initialize LibHoney with your Honeycomb writekey and dataset
-  name
-* Create a FieldBuilder from LibHoney, then a Event from that FieldBuilder
-* Send that Event
-* Close LibHoney when you are finished
+## Example Usage
 
-## Example
+```java
+import io.honeycomb.*;
 
-You can find an example demonstrating usage in `Example.java`
+// ...
+
+// Initialize a LibHoney instance
+LibHoney libhoney = new LibHoney.Builder().writeKey(WRITE_KEY).dataSet(DATA_SET).build();
+
+// Populate an Event and send it immediately
+HashMap<String, Object> data = new HashMap();
+data.put("durationMs", new Float(153.12));
+data.put("method", "get");
+data.put("hostname", "appserver15");
+data.put("payloadLength", new Integer(27));
+libhoney.sendNow(data);
+
+// Call close() to flush any pending calls to Honeycomb and shut down gracefully
+libhoney.close();
+```
+
+You can find a complete runnable example demonstrating usage in [`Example.java`](src/main/java/io/honeycomb/Example.java)
 
 ## Contributions
 
