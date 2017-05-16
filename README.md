@@ -7,8 +7,6 @@ Java library for sending events to [Honeycomb](https://honeycomb.io). (For more 
 
 An API reference is available at https://honeycombio.github.io/libhoney-java
 
-Docs are generated via `javadoc -d javadoc -sourcepath src/main/java/ io.honeycomb` and hosted on the `gh-pages` branch of this repo.
-
 ## Example Usage
 
 ```java

@@ -1,3 +1,8 @@
 language: java
 jdk:
-  - oraclejdk8
+- oraclejdk8
+after_success:
+- ./push_docs.sh
+env:
+  global:
+  - secure: hS6ORzF2xH2M/+I9IsST99fWptD+k1gG5FwM9PUa8V72UkY8vr20fkiMqUteKl/WLgk/RCQE16IpdV4tBAhZ51ylzGBgKP9HEGFDDi27YpCCLPaayMalDKV/6RxbVE8nE3mtHYj5jvBbqGnM7m5/aJNtWDlsseOIXwlFNaGBU0a252I6J898jbXCvpjexpYUaRN5EO6ajXufDUM3NXfRUtlcXZ7g+VchG5xgAajGlkrRRa66Gb4hhgSlZbsvdFL3/ln9Hbh+gZdyJ+5dkns4Jaor9KEr4IqoYIIvWmh/zp9Yu9EKzqHexgCOixJF0aEfDZXn5dV6VZ/jmf0Jtd90XZNTf8m25gkqpPAPKv6udr73X+1NiOH41BIrSVnlwXb1fqUanftXMaRJh0PFPYze1fLbjQtRJvYS7joFNrVBFYGGtlWazl9UkpKYSXIU8o/TeeHVcYSbJ8ngqKPkyqAZXVp6FP8MC0HMwHhxD8xKvfC0lnxCY7hg71IRyYR8HInNew7rtVoH3K/FKz2TiKSSS6xw0bv/6IjkJCaInhNfrOEeGE4OA+eA5GhS5ZNeouBINS+AEcAt+jt5wEJkAgFfUutWtz2oxeICQDX6QkcjXM5GxBzokP6UpXglxmypck8io6w6Z5jW9RlZ//FJcNLebxbJj12iUwX/Zfl+Zdwwf0E= # contains GH_TOKEN for push_docs
