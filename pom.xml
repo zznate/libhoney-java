@@ -4,7 +4,7 @@
 
     <groupId>io.honeycomb</groupId>
     <artifactId>libhoney-java</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
 
     <name>libhoney-java</name>
     <description>Java library for sending events to Honeycomb</description>
@@ -29,7 +29,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:honeycombio/libhoney-java.git</developerConnection>
         <url>https://github.com/honeycombio/libhoney-java</url>
-      <tag>libhoney-java-0.0.1</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
