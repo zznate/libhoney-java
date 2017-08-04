@@ -1,19 +1,24 @@
 package io.honeycomb;
 
+import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpResponse;
+
+import org.apache.http.HttpHost;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.*;
 
 /**
  * Sends messages and receives responses with honeycomb.io.
@@ -25,8 +30,6 @@ public class Transmission {
      */
     private ArrayBlockingQueue<Object> requestQueue;
     private ArrayBlockingQueue<JSONObject> responseQueue;
-    private final ExecutorService executor;
-    private final Object POISON_PILL = new Object();
 
     // Metadata
     private String apiHost;
@@ -36,8 +39,31 @@ public class Transmission {
     private final int maxConcurrentBranches;
     private String userAgent;
 
+    private CloseableHttpClient httpClient;
+    private PoolingHttpClientConnectionManager conMgr;
+    private AtomicBoolean conMgrActive = new AtomicBoolean(false);
+
     // Logging
     private final Log log = LogFactory.getLog(Transmission.class);
+
+    private void init() {
+
+        // set a bunch of other stuff like header tweaks, threading and gzip here
+        conMgr = new PoolingHttpClientConnectionManager();
+        // TODO configurable
+        conMgr.setMaxTotal(10);
+        // TODO configurable? may have different port number?
+        HttpRoute route = new HttpRoute(new HttpHost(apiHost, 80));
+        // TODO configurabe? but look into perRoute vs. threadPool size interplay
+        // let's make it match now since we only have one route
+        conMgr.setMaxPerRoute(route,10);
+
+        httpClient = HttpClients.custom()
+                .setConnectionManager(conMgr)
+                .build();
+        conMgrActive.compareAndSet(false, true);
+
+    }
 
     /**
      * Constructs a Transmission from a Transmission.Builder.
@@ -54,27 +80,7 @@ public class Transmission {
         this.responseQueue = new ArrayBlockingQueue<>(builder.responseQueueLength);
         this.userAgent = builder.userAgent;
 
-        /**
-         * Blocks on requestQueue.take(), handling and usually sending a request when it is taken
-         */
-        this.executor = Executors.newFixedThreadPool(this.maxConcurrentBranches);
-        for (int i = 0; i < maxConcurrentBranches; i++) {
-            this.executor.submit(() -> {
-                try {
-                    while (!Thread.currentThread().isInterrupted()) {
-                        Object request = requestQueue.take();
-                        if (request == POISON_PILL) {
-                            log.debug("killing thread " + Thread.currentThread().getId());
-                            this.enqueueRequest(POISON_PILL);
-                            return;
-                        }
-                        this.send((Event) request);
-                    }
-                } catch (Exception e) {
-                    log.error(e);
-                }
-            });
-        }
+
     }
 
     /**
@@ -148,18 +154,16 @@ public class Transmission {
     }
 
     /**
-     * Closes Transmission by enqueuing a POISON_PILL which causes each thread to return,
-     * then shuts down the executor and awaits this.closeTimeout seconds before timing out.
+     * Wrapper around {@link CloseableHttpClient#close()} which logs any IOExceptions
+     * and returns.
      */
     public void close() {
-        this.executor.shutdown();
         try {
-            this.requestQueue.offer(POISON_PILL); // Does not acknowledge blockOnSend
-            this.executor.awaitTermination(this.closeTimeout, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.error(e);
-        } finally {
-            this.executor.shutdownNow();
+            httpClient.close();
+            conMgr.shutdown();
+            conMgrActive.compareAndSet(true, false);
+        } catch (IOException ioe) {
+            log.error("There was a problem closing the underying HttpClient: ", ioe);
         }
     }
 
@@ -170,6 +174,8 @@ public class Transmission {
      * @return an HTTP POST request
      */
     private HttpPost createHttpRequest(Event event) {
+        // TODO we dont need most of this as it's primed in connection manager
+        // TODO most of this can be moved up to connection manager as well1
         HttpPost post = new HttpPost(this.apiHost + "/1/events/" + event.getDataSet());
 
         post.setHeader("User-Agent", this.userAgent);
@@ -202,29 +208,6 @@ public class Transmission {
         return json;
     }
 
-    /**
-     * Returns a JSONObject based on the HTTP response received from honeycomb.io.
-     * @param httpResponse HTTP response received
-     * @param metadata metadata string used for debugging
-     * @param start current time in ms when the request started
-     * @return a JSONObject based on the HTTP response received from honeycomb.io
-     */
-    private JSONObject createJsonResponse(HttpResponse httpResponse, String metadata, long start)  {
-        long end = System.currentTimeMillis();
-
-        JSONObject json = new JSONObject();
-        try {
-            json.put("status_code", httpResponse.getStatusLine().getStatusCode());
-            json.put("duration", end - start);
-            json.put("metadata", metadata);
-            json.put("body", EntityUtils.toString(httpResponse.getEntity()));
-            json.put("error", "");
-        } catch (Exception e) {
-            log.error(e);
-        }
-
-        return json;
-    }
 
     /**
      * Adds a Event to this Transmission's request queue.
@@ -274,82 +257,19 @@ public class Transmission {
         }
     }
 
-    /**
-     * Returns the API host for this Transmission.
-     * @return the API host for this Transmission
-     */
-    public String getApiHost() {
-        return this.apiHost;
-    }
 
     /**
-     * Returns true if this Transmission should block on response.
-     * @return true if this Transmission should block on response
-     */
-    public boolean getBlockOnResponse() {
-        return this.blockOnResponse;
-    }
-
-    /**
-     * Returns true if this Transmission should block on send.
-     * @return true if this Transmission should block on send
-     */
-    public boolean getBlockOnSend() {
-        return this.blockOnSend;
-    }
-
-    /**
-     * Returns number of seconds Transmission's close method will wait before timing out.
-     * @return number of seconds Transmission's close method will wait before timing out
-     */
-    public int getCloseTimeout() {
-        return this.closeTimeout;
-    }
-
-    /**
-     * Returns this Transmission's thread executor.
-     * @return this Transmission's thread executor
-     */
-    public Executor getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * Returns this Transmission's queue of requests to be sent.
-     * @return this Transmission's queue of requests to be sent.
-     */
-    public Queue getRequestQueue() {
-        return this.requestQueue;
-    }
-
-    /**
-     * Return this Transmission's queue of received responses.
-     * @return this Transmission's queue of received responses.
-     */
-    public Queue getResponseQueue() {
-        return this.responseQueue;
-    }
-
-    /**
-     * Returns the number of threads to be instantiated on construction.
-     * @return the number of threads to be instantiated on construction
-     */
-    public int getMaxConcurrentBranches() {
-        return this.maxConcurrentBranches;
-    }
-
-    /**
-     * Returns true if all threads are shutdown.
-     * @return true if all threads are shutdown
+     *
+     * @return true if {@link #close()} has been called
      */
     public boolean isShutdown() {
-        return this.executor.isShutdown();
+        return conMgrActive.get();
     }
 
     /**
      * Send an HTTP request based on a Event, wait for a response, then enqueue the response.
      *
-     * @param event HonyEvent from which the HTTP request is built
+     * @param event Event from which the HTTP request is built
      */
     protected void send(Event event) {
         long start = System.currentTimeMillis();
@@ -357,16 +277,25 @@ public class Transmission {
         // Configure request
         HttpPost post = this.createHttpRequest(event);
 
-        // Execute request
-        HttpResponse response = null;
-        try {
-            response = (new DefaultHttpClient()).execute(post);
+        JSONObject json = new JSONObject();
+
+        // response is AutoCloseable so we try-with-resource
+        try (CloseableHttpResponse response = (httpClient).execute(post)) {
+
+            long end = System.currentTimeMillis();
+
+            try {
+                json.put("status_code", response.getStatusLine().getStatusCode());
+                json.put("duration", end - start);
+                json.put("metadata", event.getMetadata());
+                json.put("body", EntityUtils.toString(response.getEntity()));
+                json.put("error", "");
+            } catch (Exception e) {
+                log.error(e);
+            }
         } catch (IOException e) {
             log.error(e);
         }
-
-        // Interpret response
-        JSONObject json = this.createJsonResponse(response, event.getMetadata(), start);
 
         // Enqueue response
         this.enqueueResponse(json);
