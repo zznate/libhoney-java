@@ -30,9 +30,6 @@ public final class LibHoney {
     private final String dataSet;
     private final int sampleRate;
     private final String apiHost;
-    private final int maxConcurrentBranches;
-    private final boolean blockOnSend;
-    private final boolean blockOnResponse;
     private final int closeTimeout;
     private final String userAgent;
 
@@ -48,9 +45,6 @@ public final class LibHoney {
         this.dataSet = builder.dataSet;
         this.sampleRate = builder.sampleRate;
         this.apiHost = builder.apiHost;
-        this.maxConcurrentBranches = builder.maxConcurrentBranches;
-        this.blockOnSend = builder.blockOnSend;
-        this.blockOnResponse = builder.blockOnResponse;
         this.closeTimeout = builder.closeTimeout;
         this.userAgent = builder.userAgent;
         this.transmission = new Transmitter();
@@ -65,12 +59,7 @@ public final class LibHoney {
         private String dataSet = Constants.DEFAULT_DATA_SET;
         private int sampleRate = Constants.DEFAULT_SAMPLE_RATE;
         private String apiHost = Constants.DEFAULT_API_HOST;
-        private int maxConcurrentBranches = Constants.DEFAULT_MAX_CONCURRENT_BRANCHES;
-        private boolean blockOnSend = Constants.DEFAULT_BLOCK_ON_SEND;
-        private boolean blockOnResponse = Constants.DEFAULT_BLOCK_ON_RESPONSE;
         private int closeTimeout = Constants.DEFAULT_CLOSE_TIMEOUT;
-        private int requestQueueLength = Constants.DEFAULT_REQUEST_QUEUE_LENGTH;
-        private int responseQueueLength = Constants.DEFAULT_RESPONSE_QUEUE_LENGTH;
         private String userAgent = Constants.DEFAULT_USER_AGENT;
 
         public Builder writeKey(String writeKey) {
@@ -93,33 +82,8 @@ public final class LibHoney {
             return this;
         }
 
-        public Builder maxConcurrentBranches(int maxConcurrentBranches) {
-            this.maxConcurrentBranches = maxConcurrentBranches;
-            return this;
-        }
-
-        public Builder blockOnSend(boolean blockOnSend) {
-            this.blockOnSend = blockOnSend;
-            return this;
-        }
-
-        public Builder blockOnResponse(boolean blockOnResponse) {
-            this.blockOnResponse = blockOnResponse;
-            return this;
-        }
-
         public Builder closeTimeout(int closeTimeout) {
             this.closeTimeout = closeTimeout;
-            return this;
-        }
-
-        public Builder requestQueueLength(int requestQueueLength) {
-            this.requestQueueLength = requestQueueLength;
-            return this;
-        }
-
-        public Builder responseQueueLength(int responseQueueLength) {
-            this.responseQueueLength = responseQueueLength;
             return this;
         }
 
@@ -166,9 +130,6 @@ public final class LibHoney {
             json.put("dataSet", this.dataSet);
             json.put("sampleRate", this.sampleRate);
             json.put("apiHost", this.apiHost);
-            json.put("maxConcurrentBranches", this.maxConcurrentBranches);
-            json.put("blockOnSend", this.blockOnSend);
-            json.put("blockOnResponse", this.blockOnResponse);
             json.put("closeTimeout", this.closeTimeout);
         } catch (JSONException e) {
             log.error(e);
@@ -196,7 +157,6 @@ public final class LibHoney {
             // TODO maybe we just use a single HttpConnection and add back ArrayBlockingQueue
             // - could use Guava's future management as well.
             // - either way, need to take httpSubmission out of the hot path
-
 
             // set a bunch of other stuff like header tweaks, threading and gzip here
             conMgr = new PoolingHttpClientConnectionManager();
